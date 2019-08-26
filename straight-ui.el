@@ -15,6 +15,10 @@
 
 ;;; Code:
 
+(require 'pkg-info)
+(require 'straight)
+(require 'straight-x)
+
 (defun straight-ui--get-package-version (pkg)
   ""
   (or (ignore-errors (pkg-info-version-info pkg))
