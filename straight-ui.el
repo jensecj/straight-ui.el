@@ -117,10 +117,14 @@
 (define-derived-mode straight-ui-mode
   tabulated-list-mode "straight-ui"
   "UI for `Straight.el', based on `tabulated-list-mode'."
-  (setq tabulated-list-format [("Name" 50 t) ("Version" 15 nil)])
+  (setq tabulated-list-format [("Name" 50 t) ("Version" 15 nil) ("Upstream" 15 nil)])
+  (add-to-list 'tabulated-list-entries '(0 ["loading packages..." "" ""]) t)
+
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key nil)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+
+  (straight-ui-refresh))
 
 ;;;###autoload
 (defun straight-ui ()
