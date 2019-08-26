@@ -27,20 +27,52 @@
 (defun straight-ui--create-entry (data)
   ""
   (when-let* ((pkg (map-elt data :package))
-              (ver (straight-ui--get-package-version pkg)))
-    `[,pkg ,ver]))
+              (ver (straight-ui--get-package-version pkg))
+              (upstream "-"))
+    `[,pkg ,ver ,upstream]))
+
+(defvar straight-ui--pkg-cache () "")
+
+(defun straight-ui--add-pkg-to-cache (pkg)
+  ""
+  (add-to-list 'straight-ui--pkg-cache pkg 'append))
+
+(defun straight-ui--fetch-packages-async ()
+  ""
+  (setq straight-ui--pkg-cache nil)     ;empty cache first
+
+  (length straight-ui--pkg-cache)
+
+  (let ((pkgs (straight-x-existing-repos)))
+    (message (format "fetching %s packages..." (length pkgs)))
+    (dolist (p (-partition-all 31 pkgs))
+      (async-start
+       `(lambda ()
+          ,(async-inject-variables "^load-path$")
+          (require 'straight-ui)
+          (require 'dash)
+          (require 'dash-functional)
+
+          (-map #'straight-ui--create-entry ',p))
+       `(lambda (pkg)
+          ,(async-inject-variables "^load-path$")
+          (require 'straight-ui)
+
+          (dolist (p pkg)
+            (straight-ui--add-pkg-to-cache p))
+
+          (straight-ui-refresh))))))
 
 (defun straight-ui--refresh ()
   ""
-  ;; TODO: make async, populate entries as they are begin created.
   (setq tabulated-list-entries nil)
   (let ((idx 0)
-        (packages (straight-x-existing-repos)))
+        (packages straight-ui--pkg-cache))
     (dolist (p packages)
-      (add-to-list 'tabulated-list-entries `(,idx ,(straight-ui--create-entry p)) t)
+      (add-to-list 'tabulated-list-entries `(,idx ,p) t)
       (cl-incf idx))))
 
-(defun straight-ui-revert-buffer ()
+(defun straight-ui--revert-buffer ()
   ""
   (interactive)
   (revert-buffer))
@@ -72,7 +104,7 @@
 (defvar straight-ui-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map (kbd "g") #'straight-ui-revert-buffer)
+    (define-key map (kbd "g") #'straight-ui-refresh)
     (define-key map (kbd "u") #'straight-ui-refresh)
 
     (define-key map (kbd "p") #'straight-ui-pull-package-at-point)
@@ -97,8 +129,8 @@
   (switch-to-buffer "*straight-ui*" nil)
   (straight-ui-mode)
 
-  (straight-ui--refresh)
-  (straight-ui--revert-buffer)
+  (straight-ui--fetch-packages-async)
+  (straight-ui-refresh)
 
   (tabulated-list-print t))
 
