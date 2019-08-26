@@ -80,8 +80,10 @@
 (defun straight-ui-refresh ()
   ""
   (interactive)
-  (straight-ui--refresh)
-  (straight-ui--revert-buffer))
+  (when-let ((buf (get-buffer "*straight-ui*")))
+    (with-current-buffer buf
+      (straight-ui--refresh)
+      (straight-ui--revert-buffer))))
 
 (defun straight-ui-pull-package-at-point ()
   ""
