@@ -37,11 +37,10 @@
   ""
   (add-to-list 'straight-ui--pkg-cache pkg 'append))
 
-(defun straight-ui--fetch-packages-async ()
+(defun straight-ui--update-pkg-cache-async ()
   ""
   (setq straight-ui--pkg-cache nil)     ;empty cache first
 
-  (length straight-ui--pkg-cache)
 
   (let ((pkgs (straight-x-existing-repos)))
     (message (format "fetching %s packages..." (length pkgs)))
@@ -77,6 +76,11 @@
   (interactive)
   (revert-buffer))
 
+(defun straight-ui-refresh-packages ()
+  ""
+  (interactive)
+  (straight-ui--update-pkg-cache-async))
+
 (defun straight-ui-refresh ()
   ""
   (interactive)
@@ -108,6 +112,7 @@
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "g") #'straight-ui-refresh)
     (define-key map (kbd "u") #'straight-ui-refresh)
+    (define-key map (kbd "U") #'straight-ui-refresh-packages)
 
     (define-key map (kbd "p") #'straight-ui-pull-package-at-point)
     (define-key map (kbd "P") #'straight-pull-all)
@@ -135,7 +140,7 @@
   (switch-to-buffer "*straight-ui*" nil)
   (straight-ui-mode)
 
-  (straight-ui--fetch-packages-async)
+  (straight-ui--update-pkg-cache-async)
   (straight-ui-refresh)
 
   (tabulated-list-print t))
